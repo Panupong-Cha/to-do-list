@@ -2,6 +2,7 @@
 
 import axios from "axios";
 import { useState, useEffect } from "react";
+import { BiChevronsUp } from "react-icons/bi";
 
 export default function Home() {
   const statuses = ["TODO", "DOING", "DONE"];
@@ -10,6 +11,7 @@ export default function Home() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [showBackToTop, setShowBackToTop] = useState<boolean>(false);
   const offset = 0;
   const limit = 30;
 
@@ -42,6 +44,21 @@ export default function Home() {
   useEffect(() => {
     fetchTasks(status);
   }, [status]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowBackToTop(true);
+      } else {
+        setShowBackToTop(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   const groupByDate = (tasks: any[]) => {
     const grouped = tasks.reduce((acc: { [key: string]: any[] }, task) => {
@@ -116,6 +133,14 @@ export default function Home() {
           <p>No tasks found.</p>
         )}
       </div>
+      <button
+        className={`fixed bottom-5 right-5 p-3 bg-blue-500 text-white rounded-full transition-opacity duration-300 ${
+          showBackToTop ? "opacity-100" : "opacity-0"
+        }`}
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      >
+        <BiChevronsUp size={24} />
+      </button>
     </>
   );
 }
