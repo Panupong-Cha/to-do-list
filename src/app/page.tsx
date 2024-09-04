@@ -12,12 +12,13 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [showBackToTop, setShowBackToTop] = useState<boolean>(false);
-  const offset = 0;
-  const limit = 30;
+  const [offset, setOffset] = useState<number>(0);
+  const [limit, setLimit] = useState<number>(10);
 
-  const fetchTasks = async (status: string) => {
+  const fetchTasks = async (status: string, offset: number, limit: number) => {
     setLoading(true);
     setError(null);
+
     try {
       const response = await axios.get(
         `https://todo-list-api-mfchjooefq-as.a.run.app/todo-list?status=${status}&offset=${offset}&limit=${limit}&sortBy=createdAt&isAsc=true`
@@ -26,7 +27,9 @@ export default function Home() {
       console.log("API Response:", response.data);
 
       if (response.data && Array.isArray(response.data.tasks)) {
-        setTasks(response.data.tasks);
+        setTasks((prevTasks) => [...prevTasks, ...response.data.tasks]);
+        setOffset(offset + 1);
+        setLimit(limit + 10);
       } else {
         setError(
           "Expected an array of tasks, but received a different format."
@@ -42,7 +45,10 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchTasks(status);
+    setTasks([]);
+    setOffset(0);
+    setLimit(10);
+    fetchTasks(status, 0, 10);
   }, [status]);
 
   useEffect(() => {
@@ -52,13 +58,20 @@ export default function Home() {
       } else {
         setShowBackToTop(false);
       }
+
+      if (
+        window.innerHeight + window.scrollY >= document.body.offsetHeight &&
+        !loading
+      ) {
+        fetchTasks(status, offset, limit);
+      }
     };
 
     window.addEventListener("scroll", handleScroll);
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, []);
+  }, [status, offset, limit, loading]);
 
   const groupByDate = (tasks: any[]) => {
     const grouped = tasks.reduce((acc: { [key: string]: any[] }, task) => {
@@ -100,7 +113,7 @@ export default function Home() {
           ))}
         </div>
 
-        {loading ? (
+        {loading && tasks.length === 0 ? (
           <p>Loading...</p>
         ) : error ? (
           <p className="text-red-500">{error}</p>
@@ -133,6 +146,7 @@ export default function Home() {
           <p>No tasks found.</p>
         )}
       </div>
+
       <button
         className={`fixed bottom-5 right-5 p-3 bg-blue-500 text-white rounded-full transition-opacity duration-300 ${
           showBackToTop ? "opacity-100" : "opacity-0"
