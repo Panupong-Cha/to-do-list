@@ -4,20 +4,20 @@ import axios from "axios";
 import { useState, useEffect } from "react";
 import { BiChevronsUp } from "react-icons/bi";
 
+import { Skeleton } from "@mui/material";
+
 export default function Home() {
   const statuses = ["TODO", "DOING", "DONE"];
   const [status, setStatus] = useState<string>("TODO");
 
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const [showBackToTop, setShowBackToTop] = useState<boolean>(false);
   const [offset, setOffset] = useState<number>(0);
   const [limit, setLimit] = useState<number>(10);
 
   const fetchTasks = async (status: string, offset: number, limit: number) => {
     setLoading(true);
-    setError(null);
 
     try {
       const response = await axios.get(
@@ -31,14 +31,10 @@ export default function Home() {
         setOffset(offset + 1);
         setLimit(limit + 10);
       } else {
-        setError(
-          "Expected an array of tasks, but received a different format."
-        );
         console.error("Unexpected data format:", response.data);
       }
     } catch (error) {
       console.error("Error fetching tasks:", error);
-      setError("Failed to fetch tasks.");
     } finally {
       setLoading(false);
     }
@@ -114,9 +110,20 @@ export default function Home() {
         </div>
 
         {loading && tasks.length === 0 ? (
-          <p>Loading...</p>
-        ) : error ? (
-          <p className="text-red-500">{error}</p>
+          <div className="w-full lg:w-1/2 mb-4">
+            {[...Array(5)].map((_, index) => (
+              <div key={index} className="w-full  mb-4">
+                <Skeleton variant="text" sx={{ fontSize: "1rem" }} />
+
+                <Skeleton
+                  variant="rounded"
+                  width="100%"
+                  height={100}
+                  className="mt-2"
+                />
+              </div>
+            ))}
+          </div>
         ) : Object.keys(groupedTasks).length > 0 ? (
           Object.keys(groupedTasks).map((date) => (
             <div key={date} className="w-full lg:w-1/2 mb-4">
@@ -143,7 +150,7 @@ export default function Home() {
             </div>
           ))
         ) : (
-          <p>No tasks found.</p>
+          <div>No tasks found.</div>
         )}
       </div>
 
